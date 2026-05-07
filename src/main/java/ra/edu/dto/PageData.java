@@ -1,4 +1,4 @@
-package ra.edu.dto.response;
+package ra.edu.dto;
 
 import lombok.Builder;
 import lombok.Getter;

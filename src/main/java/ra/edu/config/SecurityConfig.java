@@ -80,7 +80,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**")
                         .hasRole("ADMIN")
 
-                        // STUDENT API
+                        // STUDENT API - Danh sách: ADMIN & MENTOR; Chi tiết: ADMIN, MENTOR, STUDENT
+                        .requestMatchers(HttpMethod.GET, "/api/students")
+                        .hasAnyRole("ADMIN", "MENTOR")
                         .requestMatchers("/api/students/**")
                         .hasAnyRole("ADMIN", "MENTOR", "STUDENT")
 

@@ -13,4 +13,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // phương thức đăng nhập theo username
     @Query("FROM User WHERE username = :username OR email= :username OR phoneNumber = :username")
     Optional<User> loadUserByUsername(@Param("username") String username);
+
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+    boolean existsByPhoneNumber(String phoneNumber);
 }
