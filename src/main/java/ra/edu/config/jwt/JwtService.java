@@ -10,75 +10,94 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.util.Arrays;
 import java.util.Date;
 
 @Component
 @Slf4j
 public class JwtService {
-    // lấy thuộc tính từ file properties
+
     @Value("${jwt.secret-key}")
     private String jwtSecret;
+
     @Value("${jwt.expired}")
-    private long expiredTime;
-    // Sinh jwt
-    // accessToken : 15p
-    public String generateAccessToken(String username){
+    private long expiredTime; // Access token: 1 giờ
+
+    @Value("${jwt.refresh-expired}")
+    private long refreshExpiredTime; // Refresh token: 7 ngày
+
+    // ---- ACCESS TOKEN (1 giờ) ----
+    public String generateAccessToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
-//                .setPayload(userDetails.getAuthorities().toString())
-                .setIssuedAt(new Date()) // thời gian bắt đầu token hoạt động
-                .setExpiration(new Date(new Date().getTime() + expiredTime))
-//                .signWith(SignatureAlgorithm.HS256, jwtSecret)
-                .signWith(getKey(), SignatureAlgorithm.HS256) // nghiên cứu
-                .compact();
-    }
-    private Key getKey(){
-        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        System.out.println("key : "+ Arrays.toString(key.getEncoded()));
-        return key;// base 64
-    }
-    // Sử dụng Key để mã hóa base 64 chứ ko dùng chuỗi raw secret
-    // refreshToken : 7 ngày
-    public String generateRefreshToken(UserDetails userDetails){
-        return Jwts.builder()
-                .setSubject(userDetails.getUsername())
-//                .setPayload(userDetails.getAuthorities().toString())
-                .setIssuedAt(new Date()) // thời gian bắt đầu token hoạt động
-                .setExpiration(new Date(new Date().getTime() + expiredTime*96*7))
-//                .signWith(SignatureAlgorithm.HS256, jwtSecret)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiredTime))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
-
     }
-    // Xác minh token hợp lệ
-    public boolean validateToken(String token){
+
+    // ---- REFRESH TOKEN (7 ngày) ----
+    public String generateRefreshToken(UserDetails userDetails) {
+        return Jwts.builder()
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiredTime))
+                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // ---- Key dùng để ký ----
+    private Key getKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // ---- Validate token (trả false nếu hết hạn hoặc lỗi) ----
+    public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getKey())
                     .build()
                     .parseClaimsJws(token);
             return true;
-        }catch (MalformedJwtException e){
-            // token ko đúng loại
-            log.error("Invalid token ",e.getMessage());
-        }catch (UnsupportedJwtException e){
-            log.error("Unsupported token ",e.getMessage()); // ko hỗ trợ token
-        }catch (ExpiredJwtException e){
-            // token hêt hạn
-            log.error("Expired token ",e.getMessage());
-        }
-        catch (IllegalArgumentException e){
-            log.error("Jwt key string invalid ",e.getMessage()); // key ko hợp lệ
+        } catch (ExpiredJwtException e) {
+            log.warn("Token hết hạn: {}", e.getMessage());
+        } catch (MalformedJwtException e) {
+            log.error("Token không hợp lệ: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            log.error("Token không được hỗ trợ: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("Key không hợp lệ: {}", e.getMessage());
         }
         return false;
     }
 
-    // Giải mã token lấy thông tin
-    public String getUsernameFromToken(String token){
+    // ---- Lấy username từ token bình thường ----
+    public String getUsernameFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getKey())
                 .build()
-                .parseClaimsJws(token).getBody().getSubject();
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    // ---- Lấy username từ REFRESH TOKEN (kể cả khi access token đã hết hạn) ----
+    public String getUsernameFromRefreshToken(String refreshToken) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(refreshToken)
+                .getBody()
+                .getSubject();
+    }
+
+    // ---- Lấy thời gian hết hạn của access token ----
+    public Date getExpirationDate(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
     }
 }
+
