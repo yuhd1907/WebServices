@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import ra.edu.config.jwt.JwtService;
 import ra.edu.dto.request.FormLogin;
 import ra.edu.dto.request.FormRegister;
-import ra.edu.dto.request.RefreshTokenRequest;
 import ra.edu.dto.response.JwtResponse;
 import ra.edu.dto.response.UserProfileResponse;
 import ra.edu.entity.User;
@@ -38,7 +37,8 @@ public class AuthenServiceImpl implements AuthenSevice {
     private final JwtService jwtService;
 
     @Override
-    public UserProfileResponse register(FormRegister request) {
+    public void register(FormRegister request) {
+        // Kiểm tra dữ liệu trùng lặp
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ConflictException("Tên đăng nhập đã được sử dụng");
         }
@@ -49,18 +49,28 @@ public class AuthenServiceImpl implements AuthenSevice {
             throw new ConflictException("Số điện thoại đã được đăng kí");
         }
 
+        // tạo mới user
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhone());
         user.setFullName(request.getFullName());
-        // Role mặc định là ADMIN, không cho phép tự chọn role
-        user.setRole(roleRepository.findByRoleName(RoleName.ADMIN)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy vai trò ADMIN trong hệ thống")));
-        
+        user.setRole(roleRepository.findByRoleName(request.getRoleName())
+                .orElseThrow(() -> new BadRequestException("Vai trò không hợp lệ: " + request.getRoleName())));
+        // Lưu user
         userRepository.save(user);
-        return UserMapper.toProfileResponse(user);
+
+        // Nếu role là STUDENT -> tự động tạo bản ghi trong bảng students
+        if (request.getRoleName() == RoleName.STUDENT) {
+            // Auto-generate mã sinh viên: SV + timestamp
+            String studentCode = "SV" + System.currentTimeMillis();
+            Student student = Student.builder()
+                    .user(user)
+                    .studentCode(studentCode)
+                    .build();
+            studentRepository.save(student);
+        }
     }
 
     @Override
@@ -73,40 +83,13 @@ public class AuthenServiceImpl implements AuthenSevice {
         } catch (Exception e) {
             throw new BadRequestException("Tên đăng nhập hoặc mật khẩu không chính xác");
         }
-        User user = userRepository.loadUserByUsername(request.getUsername())
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy người dùng"));
-        
-        org.springframework.security.core.userdetails.UserDetails userDetails =
-                (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
-        String accessToken = jwtService.generateAccessToken(user.getUsername());
-        String refreshToken = jwtService.generateRefreshToken(userDetails);
+        User user = userRepository.loadUserByUsername(request.getUsername()).orElseThrow();
         return JwtResponse.builder()
                 .userId(user.getUserId())
                 .fullName(user.getFullName())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expirationDate(jwtService.getExpirationDate(accessToken))
-                .build();
-    }
-
-    @Override
-    public JwtResponse refreshToken(RefreshTokenRequest request) {
-        String refreshToken = request.getRefreshToken();
-        // Validate refresh token
-        if (!jwtService.validateToken(refreshToken)) {
-            throw new BadRequestException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
-        }
-        String username = jwtService.getUsernameFromRefreshToken(refreshToken);
-        User user = userRepository.loadUserByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng: " + username));
-        // Cấp access token mới
-        String newAccessToken = jwtService.generateAccessToken(username);
-        return JwtResponse.builder()
-                .userId(user.getUserId())
-                .fullName(user.getFullName())
-                .accessToken(newAccessToken)
-                .refreshToken(refreshToken) // Giữ nguyên refresh token cũ
-                .expirationDate(jwtService.getExpirationDate(newAccessToken))
+                .accessToken(jwtService.generateAccessToken(user.getUsername()))
+                .expirationDate(new Date(new Date().getTime() + 15 * 60 * 1000))
+                .refreshToken(null)
                 .build();
     }
 

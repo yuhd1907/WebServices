@@ -2,19 +2,14 @@ package ra.edu.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ra.edu.dto.request.UserCreateRequest;
 import ra.edu.dto.request.UserRoleRequest;
 import ra.edu.dto.request.UserStatusRequest;
 import ra.edu.dto.request.UserUpdateRequest;
 import ra.edu.dto.response.ApiResponse;
 import ra.edu.dto.response.UserProfileResponse;
-import ra.edu.entity.RoleName;
 import ra.edu.service.UserService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -22,41 +17,6 @@ import java.util.List;
 public class AdminController {
 
     private final UserService userService;
-
-    /**
-     * GET /api/users - Lấy danh sách tất cả người dùng (có thể lọc theo vai trò)
-     * Quyền: ADMIN
-     * Query param: role (tuỳ chọn) - ADMIN, MENTOR, STUDENT
-     */
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<UserProfileResponse>>> getAllUsers(
-            @RequestParam(required = false) RoleName role) {
-        List<UserProfileResponse> users = userService.getAllUsers(role);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách người dùng thành công", users));
-    }
-
-    /**
-     * GET /api/users/{user_id} - Lấy thông tin chi tiết một người dùng theo ID
-     * Quyền: ADMIN
-     */
-    @GetMapping("/{user_id}")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> getUserById(
-            @PathVariable("user_id") Long userId) {
-        UserProfileResponse user = userService.getUserById(userId);
-        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin người dùng thành công", user));
-    }
-
-    /**
-     * POST /api/users - Tạo tài khoản người dùng mới (ADMIN tạo cho MENTOR/STUDENT)
-     * Quyền: ADMIN
-     */
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserProfileResponse>> createUser(
-            @Valid @RequestBody UserCreateRequest request) {
-        UserProfileResponse newUser = userService.createUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Tạo tài khoản người dùng thành công", newUser));
-    }
 
     /**
      * PUT /api/users/{user_id} - Cập nhật thông tin cơ bản của người dùng

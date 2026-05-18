@@ -2,10 +2,12 @@ package ra.edu.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import ra.edu.entity.RoleName;
 
 @Setter
 @Getter
@@ -27,4 +29,8 @@ public class FormRegister {
 
     @NotBlank(message = "Họ và tên không được để trống")
     private String fullName;
+
+    @NotNull(message = "Vai trò không được để trống")
+    private RoleName roleName;
 }
+
