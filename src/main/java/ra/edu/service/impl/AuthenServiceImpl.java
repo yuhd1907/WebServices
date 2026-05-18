@@ -37,7 +37,7 @@ public class AuthenServiceImpl implements AuthenSevice {
     private final JwtService jwtService;
 
     @Override
-    public void register(FormRegister request) {
+    public UserProfileResponse register(FormRegister request) {
         // Kiểm tra dữ liệu trùng lặp
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ConflictException("Tên đăng nhập đã được sử dụng");
@@ -71,6 +71,13 @@ public class AuthenServiceImpl implements AuthenSevice {
                     .build();
             studentRepository.save(student);
         }
+
+        return UserMapper.toProfileResponse(user);
+    }
+
+    @Override
+    public JwtResponse refreshToken(ra.edu.dto.request.RefreshTokenRequest request) {
+        throw new UnsupportedOperationException("Tính năng refresh token chưa được triển khai");
     }
 
     @Override

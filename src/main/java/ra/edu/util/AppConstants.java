@@ -13,6 +13,7 @@ public class AppConstants {
     public static final String ROLE_STUDENT = "STUDENT";
 
     public static final String PHONE_REGEX = "^[0-9]{10}$";
+    public static final String STUDENT_CODE_REGEX = "^[A-Za-z0-9]+$";
 
     // --- Prefix ---
     public static final String ROLE_PREFIX = "ROLE_";

@@ -90,6 +90,46 @@ public class SecurityConfig {
                         .requestMatchers("/api/mentors/**")
                         .hasAnyRole("ADMIN", "MENTOR", "STUDENT")
 
+                        // INTERNSHIP PHASE API
+                        .requestMatchers(HttpMethod.GET, "/api/internship_phases", "/api/internship_phases/**")
+                        .hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/internship_phases")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/internship_phases/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/internship_phases/**")
+                        .hasRole("ADMIN")
+
+                        // EVALUATION CRITERIA API
+                        .requestMatchers(HttpMethod.GET, "/api/evaluation_criteria", "/api/evaluation_criteria/**")
+                        .hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/evaluation_criteria")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/evaluation_criteria/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/evaluation_criteria/**")
+                        .hasRole("ADMIN")
+
+                        // ASSESSMENT ROUNDS API
+                        .requestMatchers(HttpMethod.GET, "/api/assessment_rounds", "/api/assessment_rounds/**")
+                        .hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/assessment_rounds")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/assessment_rounds/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/assessment_rounds/**")
+                        .hasRole("ADMIN")
+
+                        // ROUND CRITERIA API
+                        .requestMatchers(HttpMethod.GET, "/api/round_criteria", "/api/round_criteria/**")
+                        .hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/round_criteria")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/round_criteria/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/round_criteria/**")
+                        .hasRole("ADMIN")
+
                         // OTHER API
                         .anyRequest().authenticated()
                 )
