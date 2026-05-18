@@ -1,7 +1,9 @@
 package ra.edu.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import ra.edu.dto.request.UserCreateRequest;
 import ra.edu.dto.request.UserRoleRequest;
 import ra.edu.dto.request.UserStatusRequest;
 import ra.edu.dto.request.UserUpdateRequest;
@@ -17,12 +19,71 @@ import ra.edu.repository.RoleRepository;
 import ra.edu.repository.UserRepository;
 import ra.edu.service.UserService;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public List<UserProfileResponse> getAllUsers(RoleName role) {
+        List<User> users;
+        if (role != null) {
+            users = userRepository.findAll().stream()
+                    .filter(u -> u.getRole().getRoleName() == role)
+                    .collect(Collectors.toList());
+        } else {
+            users = userRepository.findAll();
+        }
+        return users.stream()
+                .map(UserMapper::toProfileResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserProfileResponse getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với id: " + userId));
+        return UserMapper.toProfileResponse(user);
+    }
+
+    @Override
+    public UserProfileResponse createUser(UserCreateRequest request) {
+        // Kiểm tra trùng username
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new ConflictException("Tên đăng nhập đã được sử dụng");
+        }
+        // Kiểm tra trùng email
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ConflictException("Email đã được sử dụng");
+        }
+        // Kiểm tra trùng số điện thoại (nếu có)
+        if (request.getPhone() != null && !request.getPhone().isBlank()
+                && userRepository.existsByPhoneNumber(request.getPhone())) {
+            throw new ConflictException("Số điện thoại đã được đăng kí");
+        }
+
+        Role role = roleRepository.findByRoleName(request.getRoleName())
+                .orElseThrow(() -> new BadRequestException("Vai trò không hợp lệ: " + request.getRoleName()));
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .email(request.getEmail())
+                .phoneNumber(request.getPhone())
+                .fullName(request.getFullName())
+                .role(role)
+                .isActive(true)
+                .build();
+
+        userRepository.save(user);
+        return UserMapper.toProfileResponse(user);
+    }
 
     @Override
     public UserProfileResponse updateUser(Long userId, UserUpdateRequest request) {
@@ -46,7 +107,6 @@ public class UserServiceImpl implements UserService {
         }
 
         user.setFullName(request.getFullName());
-
         userRepository.save(user);
 
         return UserMapper.toProfileResponse(user);
@@ -56,7 +116,7 @@ public class UserServiceImpl implements UserService {
     public void updateUserStatus(Long userId, UserStatusRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với id: " + userId));
-        
+
         user.setIsActive(request.getIsActive());
         userRepository.save(user);
     }
@@ -82,8 +142,8 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với id: " + userId));
-        
-        // Cấm xóa ADMIN (nếu cần)
+
+        // Cấm xóa ADMIN
         if (user.getRole().getRoleName() == RoleName.ADMIN) {
             throw new BadRequestException("Không thể xóa quản trị viên (ADMIN)");
         }

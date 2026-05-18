@@ -19,7 +19,7 @@ public class StudentCreateRequest {
     private Long userId;
 
     @NotBlank(message = "Mã sinh viên không được để trống")
-    @Pattern(regexp = AppConstants.STUDENT_CODE_REGEX, message = "Mã sinh viên không đúng định dạng")
+    @Pattern(regexp = AppConstants.STUDENT_CODE_REGEX, message = "Mã sinh viên không đúng định dạng (VD: K20CNTT001)")
     private String studentCode;
 
     private String major;

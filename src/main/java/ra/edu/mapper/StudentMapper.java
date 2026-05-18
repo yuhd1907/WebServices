@@ -27,4 +27,12 @@ public class StudentMapper {
                 .isActive(student.getUser().getIsActive())
                 .build();
     }
+
+    public static ra.edu.dto.response.StudentSummaryResponse toSummaryResponse(Student student) {
+        return ra.edu.dto.response.StudentSummaryResponse.builder()
+                .studentId(student.getStudentId())
+                .studentCode(student.getStudentCode())
+                .fullName(student.getUser().getFullName())
+                .build();
+    }
 }
