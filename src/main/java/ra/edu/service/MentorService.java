@@ -12,7 +12,4 @@ public interface MentorService {
     MentorResponse getMentorById(Long mentorId);
     MentorResponse createMentor(MentorCreateRequest request);
     MentorResponse updateMentor(Long mentorId, MentorUpdateRequest request, String username, String role);
-    
-    // API phân công sinh viên cho giáo viên hướng dẫn
-    void assignStudentsToMentor(Long mentorId, AssignStudentsRequest request);
 }

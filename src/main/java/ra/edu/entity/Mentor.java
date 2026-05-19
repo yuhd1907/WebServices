@@ -30,13 +30,7 @@ public class Mentor {
     @Column(name = "academic_rank", length = 50)
     private String academicRank;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "mentor_students",
-            joinColumns = @JoinColumn(name = "mentor_id"),
-            inverseJoinColumns = @JoinColumn(name = "student_id")
-    )
-    private Set<Student> assignedStudents;
+    // Đã thay thế bằng InternshipAssignment entity để ánh xạ phân công thực tập chi tiết hơn
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

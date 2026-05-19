@@ -72,15 +72,5 @@ public class MentorController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin giáo viên hướng dẫn thành công", mentor));
     }
 
-    /**
-     * POST /api/mentors/{mentor_id}/students - Phân công sinh viên cho giáo viên hướng dẫn
-     * Quyền: ADMIN
-     */
-    @PostMapping("/{mentor_id}/students")
-    public ResponseEntity<ApiResponse<Void>> assignStudents(
-            @PathVariable("mentor_id") Long mentorId,
-            @Valid @RequestBody AssignStudentsRequest request) {
-        mentorService.assignStudentsToMentor(mentorId, request);
-        return ResponseEntity.ok(ApiResponse.success("Phân công sinh viên cho giáo viên hướng dẫn thành công"));
-    }
+
 }

@@ -25,12 +25,14 @@ import ra.edu.util.AppConstants;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import ra.edu.repository.InternshipAssignmentRepository;
+
 @Service
 @RequiredArgsConstructor
 public class StudentServiceImpl implements StudentService {
 
     private final StudentRepository studentRepository;
-    private final MentorRepository mentorRepository;
+    private final InternshipAssignmentRepository assignmentRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -41,10 +43,11 @@ public class StudentServiceImpl implements StudentService {
             // ADMIN lấy toàn bộ danh sách sinh viên
             students = studentRepository.findAll();
         } else {
-            // MENTOR chỉ lấy sinh viên được phân công
-            Mentor mentor = mentorRepository.findByUser_Username(username)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin mentor: " + username));
-            students = List.copyOf(mentor.getAssignedStudents());
+            // MENTOR chỉ lấy sinh viên được phân công cho mình (trích từ bảng phân công)
+            students = assignmentRepository.findByMentor_User_Username(username).stream()
+                    .map(ra.edu.entity.InternshipAssignment::getStudent)
+                    .distinct()
+                    .collect(Collectors.toList());
         }
 
         return students.stream()

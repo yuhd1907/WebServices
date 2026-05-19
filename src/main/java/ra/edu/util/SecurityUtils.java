@@ -27,4 +27,22 @@ public class SecurityUtils {
     public static String extractUsername(UserDetails userDetails) {
         return userDetails.getUsername();
     }
+
+    /**
+     * Tiện ích lấy username trực tiếp từ SecurityContext
+     */
+    public static String getCurrentUsername() {
+        Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        }
+        return principal.toString();
+    }
+
+    /**
+     * Tiện ích lấy role name trực tiếp từ SecurityContext (có tiền tố ROLE_)
+     */
+    public static String getCurrentUserRole() {
+        return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority();
+    }
 }

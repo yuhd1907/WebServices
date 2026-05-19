@@ -95,20 +95,4 @@ public class MentorServiceImpl implements MentorService {
         return MentorMapper.toResponse(mentor);
     }
 
-    @Override
-    public void assignStudentsToMentor(Long mentorId, AssignStudentsRequest request) {
-        Mentor mentor = mentorRepository.findById(mentorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên hướng dẫn với id: " + mentorId));
-
-        Set<Student> studentsToAssign = new HashSet<>();
-        for (Long studentId : request.getStudentIds()) {
-            Student student = studentRepository.findById(studentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sinh viên với id: " + studentId));
-            studentsToAssign.add(student);
-        }
-
-        // Gán danh sách sinh viên được phân công vào Mentor
-        mentor.setAssignedStudents(studentsToAssign);
-        mentorRepository.save(mentor);
-    }
 }
