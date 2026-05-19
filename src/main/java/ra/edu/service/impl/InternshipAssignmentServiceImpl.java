@@ -34,17 +34,7 @@ public class InternshipAssignmentServiceImpl implements ra.edu.service.Internshi
         String username = SecurityUtils.getCurrentUsername();
         String role = SecurityUtils.getCurrentUserRole();
 
-        List<InternshipAssignment> assignments;
-
-        if ("ROLE_ADMIN".equals(role)) {
-            assignments = assignmentRepository.findAll();
-        } else if ("ROLE_MENTOR".equals(role)) {
-            assignments = assignmentRepository.findByMentor_User_Username(username);
-        } else if ("ROLE_STUDENT".equals(role)) {
-            assignments = assignmentRepository.findByStudent_User_Username(username);
-        } else {
-            throw new BadRequestException("Quyền truy cập không hợp lệ.");
-        }
+        List<InternshipAssignment> assignments = assignmentRepository.findAllByRoleAndUsername(role, username);
 
         return assignments.stream()
                 .map(InternshipAssignmentMapper::toResponse)
@@ -56,20 +46,8 @@ public class InternshipAssignmentServiceImpl implements ra.edu.service.Internshi
         String username = SecurityUtils.getCurrentUsername();
         String role = SecurityUtils.getCurrentUserRole();
 
-        InternshipAssignment assignment;
-
-        if ("ROLE_ADMIN".equals(role)) {
-            assignment = assignmentRepository.findById(assignmentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân công với ID: " + assignmentId));
-        } else if ("ROLE_MENTOR".equals(role)) {
-            assignment = assignmentRepository.findByAssignmentIdAndMentor_User_Username(assignmentId, username)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân công của bạn với ID: " + assignmentId));
-        } else if ("ROLE_STUDENT".equals(role)) {
-            assignment = assignmentRepository.findByAssignmentIdAndStudent_User_Username(assignmentId, username)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân công của bạn với ID: " + assignmentId));
-        } else {
-            throw new BadRequestException("Quyền truy cập không hợp lệ.");
-        }
+        InternshipAssignment assignment = assignmentRepository.findByIdAndRoleAndUsername(assignmentId, role, username)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân công với ID: " + assignmentId + " hoặc bạn không có quyền truy cập."));
 
         return InternshipAssignmentMapper.toResponse(assignment);
     }

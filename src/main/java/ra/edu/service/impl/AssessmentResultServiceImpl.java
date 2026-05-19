@@ -31,17 +31,7 @@ public class AssessmentResultServiceImpl implements ra.edu.service.AssessmentRes
         String username = SecurityUtils.getCurrentUsername();
         String role = SecurityUtils.getCurrentUserRole();
 
-        List<AssessmentResult> results;
-
-        if ("ROLE_ADMIN".equals(role)) {
-            results = resultRepository.findAll();
-        } else if ("ROLE_MENTOR".equals(role)) {
-            results = resultRepository.findByEvaluatedBy_Username(username);
-        } else if ("ROLE_STUDENT".equals(role)) {
-            results = resultRepository.findByAssignment_Student_User_Username(username);
-        } else {
-            throw new BadRequestException("Quyền truy cập không hợp lệ.");
-        }
+        List<AssessmentResult> results = resultRepository.findAllByRoleAndUsernameAndAssignmentId(role, username, null);
 
         return results.stream()
                 .map(AssessmentResultMapper::toResponse)

@@ -17,7 +17,12 @@ import ra.edu.exception.ResourceNotFoundException;
 import ra.edu.mapper.UserMapper;
 import ra.edu.repository.RoleRepository;
 import ra.edu.repository.UserRepository;
+import ra.edu.repository.StudentRepository;
+import ra.edu.repository.MentorRepository;
+import ra.edu.repository.InternshipAssignmentRepository;
+import ra.edu.repository.AssessmentResultRepository;
 import ra.edu.service.UserService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +33,10 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final StudentRepository studentRepository;
+    private final MentorRepository mentorRepository;
+    private final InternshipAssignmentRepository assignmentRepository;
+    private final AssessmentResultRepository resultRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -122,6 +131,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void updateUserRole(Long userId, UserRoleRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với id: " + userId));
@@ -131,10 +141,40 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Không thể thay đổi vai trò của một quản trị viên (ADMIN) khác");
         }
 
-        Role role = roleRepository.findByRoleName(request.getRoleName())
+        Role newRole = roleRepository.findByRoleName(request.getRoleName())
                 .orElseThrow(() -> new BadRequestException("Vai trò không hợp lệ: " + request.getRoleName()));
 
-        user.setRole(role);
+        RoleName oldRoleName = user.getRole().getRoleName();
+        RoleName newRoleName = newRole.getRoleName();
+
+        // Nếu quyền thực sự thay đổi
+        if (oldRoleName != newRoleName) {
+            if (oldRoleName == RoleName.STUDENT) {
+                // Xóa dữ liệu liên quan đến Student
+                List<Long> assignmentIds = assignmentRepository.findAssignmentIdsByStudentId(userId);
+                if (!assignmentIds.isEmpty()) {
+                    resultRepository.deleteByAssignment_AssignmentIdIn(assignmentIds);
+                }
+                assignmentRepository.deleteByStudent_StudentId(userId);
+                if (user.getStudent() != null) {
+                    studentRepository.delete(user.getStudent());
+                    user.setStudent(null);
+                }
+            } else if (oldRoleName == RoleName.MENTOR) {
+                // Xóa dữ liệu liên quan đến Mentor
+                List<Long> assignmentIds = assignmentRepository.findAssignmentIdsByMentorId(userId);
+                if (!assignmentIds.isEmpty()) {
+                    resultRepository.deleteByAssignment_AssignmentIdIn(assignmentIds);
+                }
+                assignmentRepository.deleteByMentor_MentorId(userId);
+                if (user.getMentor() != null) {
+                    mentorRepository.delete(user.getMentor());
+                    user.setMentor(null);
+                }
+            }
+        }
+
+        user.setRole(newRole);
         userRepository.save(user);
     }
 
